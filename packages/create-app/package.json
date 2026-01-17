@@ -1,0 +1,32 @@
+{
+  "name": "create-no-bs-framework",
+  "version": "0.0.1",
+  "description": "CLI to create new Your Framework projects",
+  "bin": {
+    "create-no-bs-framework": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2",
+    "kolorist": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9"
+  },
+  "keywords": [
+    "cli",
+    "create",
+    "scaffold",
+    "no-bs-framework"
+  ],
+  "license": "MIT"
+}

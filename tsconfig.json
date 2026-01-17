@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/state" },
+    { "path": "./packages/router" },
+    { "path": "./packages/data" },
+    { "path": "./packages/forms" },
+    { "path": "./packages/create-app" }
+  ],
+  "files": []
+}
