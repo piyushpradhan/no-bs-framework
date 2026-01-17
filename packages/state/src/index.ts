@@ -23,10 +23,14 @@ import { normalizeArray } from "./core/normalization";
  * @param value - the value that we want to store
  * @returns structured and normalized value that'll be stored
  */
-export const formatState = (value: any, path?: string[]) => {
-  const domains = cleanupEmptyDomains(suggestDomains(value, path));
+export const formatState = (value: any) => {
+  const domains = cleanupEmptyDomains(suggestDomains(value));
+
+  console.log("Domains: ", domains);
 
   const restructured = restructureDataByDomains(value, domains);
+
+  console.log("Structured: ", restructured);
 
   const optimizedStore: Record<string, any> = {};
   for (const [domainName, data] of Object.entries(restructured)) {
@@ -36,6 +40,8 @@ export const formatState = (value: any, path?: string[]) => {
       optimizedStore[domainName] = data;
     }
   }
+
+  console.log("Optimized: ", optimizedStore);
 
   return optimizedStore;
 };

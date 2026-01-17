@@ -21,9 +21,11 @@ export const setNestedValue = <T extends Record<string, any>>(
   path: string[],
   value: any,
 ): any => {
-  const formattedState = formatState(value, path);
-
-  if (path.length === 0) return formattedState;
+  // Only format state for top-level assignments (path.length === 0)
+  // For nested paths, use the value directly to preserve primitives
+  if (path.length === 0) {
+    return formatState(value);
+  }
 
   const [head, ...rest] = path;
 
@@ -32,7 +34,7 @@ export const setNestedValue = <T extends Record<string, any>>(
     [head]:
       rest.length === 0
         ? value
-        : setNestedValue(obj[head] ?? {}, rest, formattedState),
+        : setNestedValue(obj[head] ?? {}, rest, value),
   };
 };
 

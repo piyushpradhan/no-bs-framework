@@ -89,44 +89,16 @@ export function inferFieldSchema(name: string, value: any): FieldSchema {
   return fieldSchema;
 }
 
-function inferDataShape(data: any, path: string[]): DataShape {
+function inferDataShape(data: any): DataShape {
   if (!data && typeof data !== "object") {
     throw new Error("Input data must be a non-empty object");
   }
 
   const fields: FieldSchema[] = [];
 
-  let formatted: Record<string, any> = {};
-  if (
-    typeof data === "boolean" ||
-    typeof data === "number" ||
-    typeof data === "string"
-  ) {
-    if (path.length === 0) {
-      formatted = {};
-    } else if (path.length === 1) {
-      formatted[path[0]] = data;
-    } else {
-      formatted = {};
-      let current: Record<string, any> = formatted;
-      path.slice(0, -1).forEach((key) => {
-        current[key] = {};
-        current = current[key];
-      });
-
-      current[path[path.length - 1]] = data;
-    }
-  } else {
-    formatted = data;
-  }
-
-  console.log(formatted);
-
-  for (const [fieldName, fieldValue] of Object.entries(formatted)) {
+  for (const [fieldName, fieldValue] of Object.entries(data)) {
     fields.push(inferFieldSchema(fieldName, fieldValue));
   }
-
-  console.log(fields);
 
   return {
     fields,
@@ -136,11 +108,8 @@ function inferDataShape(data: any, path: string[]): DataShape {
 /**
  * Generate domain names from the data
  */
-export function suggestDomains(
-  data: any,
-  path: string[] | undefined,
-): DomainSuggestion {
-  const dataShape = inferDataShape(data, path ?? []);
+export function suggestDomains(data: any): DomainSuggestion {
+  const dataShape = inferDataShape(data);
   const suggestions: DomainSuggestion = {};
 
   // Identify array fields - collections
