@@ -4,6 +4,30 @@ import { formatState } from "..";
 
 const StoreContext = React.createContext<Store<any> | null>(null);
 
+const proxyCache = new WeakMap<object, Map<string, any>>();
+
+const getCachedProxy = <T extends Record<string, any>>(
+  target: object,
+  path: string[],
+  store: Store<T>
+): any => {
+  const pathKey = path.join(".");
+
+  let pathMap = proxyCache.get(target);
+  if (!pathMap) {
+    pathMap = new Map();
+    proxyCache.set(target, pathMap);
+  }
+
+  let proxy = pathMap.get(pathKey);
+  if (!proxy) {
+    proxy = new Proxy(target, createProxyHandler(store, path));
+    pathMap.set(pathKey, proxy);
+  }
+
+  return proxy;
+};
+
 export const StoreProvider = ({
   store,
   children,
@@ -55,9 +79,9 @@ export const createProxyHandler = <T extends Record<string, any>>(
 
       const value = target[prop];
 
-      // For nested objects, create another proxy
+      // For nested objects, return cached proxy (or create and cache one)
       if (value !== null && typeof value === "object") {
-        return new Proxy(value, createProxyHandler(store, [...path, prop]));
+        return getCachedProxy(value, [...path, prop], store);
       }
 
       return value;
@@ -109,6 +133,6 @@ export const useStore = <T = any,>() => {
   // This triggers re-render when store changes
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  // Return proxied state for mutations
-  return new Proxy(state, createProxyHandler(store)) as T;
+  // Return cached proxy for mutations (root level, empty path)
+  return getCachedProxy(state, [], store) as T;
 };
