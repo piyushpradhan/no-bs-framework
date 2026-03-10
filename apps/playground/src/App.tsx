@@ -1,62 +1,38 @@
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { useState } from "react";
 import { useStore } from "@no-bs-framework/state";
+import type { AppStore } from "./types";
+import { useRouter } from "./hooks/useRouter";
+import { Shell } from "./components/layout/Shell";
+import { BoardView } from "./components/board/BoardView";
+import { ListView } from "./components/list/ListView";
+import { TaskDetailView } from "./components/task/TaskDetailView";
+import { TaskForm } from "./components/task/TaskForm";
 
 function App() {
-  const $store = useStore();
+  const $store = useStore<AppStore>();
+  const { currentView, navigate } = useRouter();
+  const [showNewTask, setShowNewTask] = useState(false);
 
-  const increaseCount = () => {
-    const count = $store.root.count + 1;
-    const document = {
-      id: "doc-123",
-      name: "random.docx",
-    };
-
-    const people = [
-      {
-        id: 1234,
-        displayName: "John Doe",
-      },
-      {
-        id: 3312,
-        displayName: "Sam Miller",
-      },
-    ];
-
-    const arrayOfNumbers = [1, 2, 3, 45];
-    const arrayOfStrings = ["something", "anything", "absolutely-anything"];
-
-    $store.root.count = count;
-    $store.document = document;
-    $store.people = people;
-    $store.numbers = arrayOfNumbers;
-    $store.values = arrayOfStrings;
+  const handleTaskClick = (taskId: string) => {
+    $store.root.selectedTaskId = taskId;
+    navigate("detail");
   };
 
-  console.log(JSON.parse(JSON.stringify($store)));
+  const handleBack = () => {
+    // Go back to whichever view was active before detail
+    navigate("board");
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={increaseCount}>count is {$store.root.count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Shell onNewTask={() => setShowNewTask(true)}>
+      {currentView === "board" && <BoardView onTaskClick={handleTaskClick} />}
+      {currentView === "list" && <ListView onTaskClick={handleTaskClick} />}
+      {currentView === "detail" && $store.root.selectedTaskId && (
+        <TaskDetailView taskId={$store.root.selectedTaskId} onBack={handleBack} />
+      )}
+
+      {showNewTask && <TaskForm onClose={() => setShowNewTask(false)} />}
+    </Shell>
   );
 }
 

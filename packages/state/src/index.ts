@@ -8,6 +8,37 @@ export {
 } from "./core/inference";
 
 export { useStore, StoreProvider } from "./store/useStore";
+export { useStoreActions } from "./store/useStoreActions";
+
+// API Integration Exports
+export { apiClient, configureApi, ApiClient } from "./api/client";
+export { cache, RequestCache } from "./api/cache";
+export { optimisticManager, OptimisticUpdateManager } from "./api/optimistic";
+
+// Hooks
+export { useFetch } from "./hooks/useFetch";
+export { useQuery } from "./hooks/useQuery";
+export { useMutation } from "./hooks/useMutation";
+export { useInfiniteQuery } from "./hooks/useInfiniteQuery";
+
+// Types
+export type {
+  ApiError,
+  ApiClientConfig,
+  HttpMethod,
+  CacheEntry,
+  CacheOptions,
+  UseFetchOptions,
+  UseFetchResult,
+  UseQueryOptions,
+  UseQueryResult,
+  UseMutationOptions,
+  UseMutationResult,
+  UseInfiniteQueryOptions,
+  UseInfiniteQueryResult,
+  ApiMetadata,
+  StoreApiDomain,
+} from "./api/types";
 
 import { Store } from "./store";
 import {

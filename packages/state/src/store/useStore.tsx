@@ -2,7 +2,7 @@ import React, { useContext, useSyncExternalStore, useCallback } from "react";
 import { Store } from ".";
 import { formatState } from "..";
 
-const StoreContext = React.createContext<Store<any> | null>(null);
+export const StoreContext = React.createContext<Store<any> | null>(null);
 
 const proxyCache = new WeakMap<object, Map<string, any>>();
 

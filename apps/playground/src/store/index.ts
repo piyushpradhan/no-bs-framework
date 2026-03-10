@@ -1,13 +1,6 @@
 import { createStore } from "@no-bs-framework/state";
+import { seedData } from "./seed";
 
-const store = createStore({
-  count: 0,
-  users: [
-    {
-      id: 1,
-      name: "something",
-    },
-  ],
-});
+const store = createStore(seedData);
 
 export default store;
