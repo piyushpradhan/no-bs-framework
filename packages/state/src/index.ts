@@ -48,6 +48,8 @@ import {
   suggestDomains,
 } from "./core/inference";
 import { normalizeArray } from "./core/normalization";
+import type { NormalizedStore } from "./core/storeTypes";
+export type { NormalizedStore } from "./core/storeTypes";
 
 /**
  * Bring the values into a optimal structure before putting
@@ -57,12 +59,7 @@ import { normalizeArray } from "./core/normalization";
  */
 export const formatState = (value: any) => {
   const domains = cleanupEmptyDomains(suggestDomains(value));
-
-  console.log("Domains: ", domains);
-
   const restructured = restructureDataByDomains(value, domains);
-
-  console.log("Structured: ", restructured);
 
   const optimizedStore: Record<string, any> = {};
   for (const [domainName, data] of Object.entries(restructured)) {
@@ -73,19 +70,23 @@ export const formatState = (value: any) => {
     }
   }
 
-  console.log("Optimized: ", optimizedStore);
-
   return optimizedStore;
 };
 
 /**
- * Create store automatically from raw API response
- * @param apiResponse - raw data from API
- * @returns initialized Store instance
+ * Create store automatically from raw API response.
+ *
+ * The return type is inferred from the input shape — arrays of objects become
+ * normalized collections (Record<string, Item>), primitives are grouped into
+ * the root domain, and nested objects become their own domains.
+ *
+ * @example
+ * const store = createStore({ count: 0, users: [{ id: "1", name: "Alice" }] });
+ * // store is Store<{ root: { count: number }; users: Record<string, { id: string; name: string }> }>
  */
 export const createStore = <T extends Record<string, any>>(
   apiResponse: T,
-): Store<any> => {
-  const formattedStore = formatState(apiResponse);
+): Store<NormalizedStore<T>> => {
+  const formattedStore = formatState(apiResponse) as NormalizedStore<T>;
   return new Store(formattedStore);
 };
