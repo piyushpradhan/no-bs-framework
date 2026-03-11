@@ -179,6 +179,23 @@ export const getNestedValue = (obj: any, path: string) => {
   return current;
 };
 
+/**
+ * Returns a stable batch function that groups multiple mutations into a
+ * single subscriber notification, preventing cascade re-renders.
+ *
+ * @example
+ * const batch = useBatch();
+ * batch(() => {
+ *   $store.tasks[id1].status = "done";
+ *   $store.tasks[id2].priority = "low";
+ * }); // triggers exactly one re-render for all subscribers
+ */
+export const useBatch = () => {
+  const store = useContext(StoreContext);
+  if (!store) throw new Error("useBatch must be used within a StoreProvider");
+  return useCallback((fn: () => void) => store.batch(fn), [store]);
+};
+
 export const useStore = <T = any,>() => {
   const store = useContext(StoreContext);
 

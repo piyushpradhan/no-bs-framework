@@ -18,12 +18,49 @@ export class Store<T> {
     return this.state;
   }
 
+  private _batching = false;
+  private _pendingState: T | null = null;
+
   setState(updater: (state: T) => T): void {
     const newState = updater(this.state);
 
     if (newState !== this.state) {
       this.state = newState;
-      this.notifyListeners();
+      if (this._batching) {
+        // Accumulate state changes during a batch; notify once at the end
+        this._pendingState = newState;
+      } else {
+        this.notifyListeners();
+      }
+    }
+  }
+
+  /**
+   * Batch multiple mutations into a single subscriber notification.
+   *
+   * Without batching, every proxy assignment fires setState which immediately
+   * notifies all useSyncExternalStore subscribers (and re-renders). With batch,
+   * all mutations in fn() update state eagerly but defer notifications until
+   * the batch completes, so subscribers re-render exactly once.
+   *
+   * @example
+   * store.batch(() => {
+   *   $store.tasks[id1].status = "done";
+   *   $store.tasks[id2].status = "done";
+   *   $store.root.count++;
+   * });
+   */
+  batch(fn: () => void): void {
+    this._batching = true;
+    this._pendingState = null;
+    try {
+      fn();
+    } finally {
+      this._batching = false;
+      if (this._pendingState !== null) {
+        this.notifyListeners();
+      }
+      this._pendingState = null;
     }
   }
 

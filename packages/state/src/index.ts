@@ -7,7 +7,7 @@ export {
   cleanupEmptyDomains,
 } from "./core/inference";
 
-export { useStore, StoreProvider } from "./store/useStore";
+export { useStore, useBatch, StoreProvider } from "./store/useStore";
 export { useStoreActions } from "./store/useStoreActions";
 
 // API Integration Exports
