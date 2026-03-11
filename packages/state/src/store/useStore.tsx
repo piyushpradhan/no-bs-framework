@@ -196,7 +196,28 @@ export const useBatch = () => {
   return useCallback((fn: () => void) => store.batch(fn), [store]);
 };
 
-export const useStore = <T = any,>() => {
+/**
+ * Subscribe to the store and return reactive state.
+ *
+ * Without a selector: returns the full state wrapped in a mutation proxy.
+ * Every state change triggers a re-render.
+ *
+ * With a selector: returns the derived value directly (no proxy). The
+ * component only re-renders when the selected slice changes (shallowEqual).
+ * Use this for performance-sensitive components that only need a subset of
+ * the state.
+ *
+ * @example
+ * // Full state with proxy mutations (broad subscription)
+ * const $store = useStore<AppStore>();
+ * $store.root.count++;
+ *
+ * // Selective subscription — only re-renders when taskCount changes
+ * const taskCount = useStore((state: AppStore) => Object.keys(state.tasks).length);
+ */
+export const useStore = <T = any, S = T>(
+  selector?: (state: T) => S,
+): S extends T ? T : S => {
   const store = useContext(StoreContext);
 
   if (!store) {
@@ -205,17 +226,31 @@ export const useStore = <T = any,>() => {
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      // Subscribe to all state changes
+      if (selector) {
+        // Subscribe with the selector — Store.notifyListeners uses shallowEqual
+        // so onStoreChange only fires when the selected slice actually changed.
+        return store.subscribe(selector as any, onStoreChange);
+      }
+      // No selector: subscribe to all state changes
       return store.subscribe((state) => state, onStoreChange);
     },
-    [store],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [store, selector],
   );
 
-  const getSnapshot = useCallback(() => store.getState(), [store]);
+  const getSnapshot = useCallback(
+    () => (selector ? selector(store.getState() as T) : store.getState()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [store, selector],
+  );
 
-  // This triggers re-render when store changes
-  const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const state = useSyncExternalStore(subscribe, getSnapshot as any, getSnapshot as any);
 
-  // Return cached proxy for mutations (root level, empty path)
-  return getCachedProxy(state, [], store) as T;
+  if (selector) {
+    // Selector path: return the derived value as-is (read-only, no proxy)
+    return state as any;
+  }
+
+  // No selector: return full state wrapped in the mutation proxy
+  return getCachedProxy(state as object, [], store) as any;
 };
