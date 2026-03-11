@@ -7,6 +7,8 @@ import { BoardView } from "./components/board/BoardView";
 import { ListView } from "./components/list/ListView";
 import { TaskDetailView } from "./components/task/TaskDetailView";
 import { TaskForm } from "./components/task/TaskForm";
+import { StoreDebugPanel } from "./components/shared/StoreDebugPanel";
+import { StressTestPanel } from "./components/shared/StressTestPanel";
 
 function App() {
   const $store = useStore<AppStore>();
@@ -32,6 +34,9 @@ function App() {
       )}
 
       {showNewTask && <TaskForm onClose={() => setShowNewTask(false)} />}
+
+      <StressTestPanel />
+      <StoreDebugPanel />
     </Shell>
   );
 }

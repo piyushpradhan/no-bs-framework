@@ -1,4 +1,9 @@
-import type { AppStore, Task, Comment, TaskStatus } from "../types";
+import type { AppStore, Task, Comment, TaskStatus, TaskPriority } from "../types";
+
+const STATUSES: TaskStatus[] = ["backlog", "todo", "in-progress", "done"];
+const PRIORITIES: TaskPriority[] = ["low", "medium", "high", "urgent"];
+const ADJECTIVES = ["Critical", "Broken", "Slow", "Missing", "Flaky", "Leaked", "Stale", "Bloated"];
+const NOUNS = ["login flow", "cache layer", "render path", "API client", "form hook", "store proxy", "router guard", "type inference"];
 
 let idCounter = 100;
 function generateId(prefix: string) {
@@ -135,4 +140,87 @@ export function setAssignee(
   const task = $store.tasks[taskId];
   if (!task) return;
   (task as any).assigneeId = assigneeId;
+}
+
+/**
+ * Stress test: adds N tasks one by one via individual proxy mutations.
+ *
+ * FRAMEWORK GAP EXPOSED: Each createTask call fires store.setState once.
+ * With N=100, that's 100 sequential state updates. React 18+ batches setState
+ * calls in event handlers and transitions, but useSyncExternalStore's subscribe
+ * callback fires synchronously outside React's batching. Result: each of the
+ * 100 mutations triggers a synchronous re-render of EVERY component using
+ * useStore(), before the next mutation runs.
+ *
+ * Expected behavior: 100 × (number of components) = potentially 1000+ renders
+ * for a single "add 100 tasks" action.
+ *
+ * Proper fix would require: either batched updates in Store.setState, or
+ * a bulk-add action that builds a new tasks object and sets it once.
+ */
+export function addStressTasks($store: AppStore, count: number = 100) {
+  const projectId = $store.root.selectedProjectId;
+  const now = new Date().toISOString().split("T")[0];
+
+  // WORKAROUND: Build a single new tasks object to avoid N sequential state updates.
+  // This is the only way to batch because we can't access store.setState directly.
+  // We need to snapshot the current tasks, add N new ones, then replace the whole domain.
+  const existingTasks = JSON.parse(JSON.stringify($store.tasks)) as Record<string, Task>;
+  const newTasks = { ...existingTasks };
+
+  for (let i = 0; i < count; i++) {
+    const id = generateId("stress");
+    const adj = ADJECTIVES[i % ADJECTIVES.length];
+    const noun = NOUNS[Math.floor(i / ADJECTIVES.length) % NOUNS.length];
+    newTasks[id] = {
+      id,
+      projectId,
+      title: `[${i + 1}] ${adj} ${noun}`,
+      description: "Auto-generated stress test task",
+      status: STATUSES[i % STATUSES.length],
+      priority: PRIORITIES[i % PRIORITIES.length],
+      assigneeId: null,
+      labelIds: [],
+      order: Object.keys(existingTasks).length + i,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  // Single state update - this is the batched workaround
+  ($store as any).tasks = newTasks;
+}
+
+/**
+ * Bulk status change: moves all tasks in a project to a new status in one shot.
+ * Tests: multiple field mutations, proxy behavior, re-render cascade.
+ */
+export function bulkChangeStatus($store: AppStore, projectId: string, newStatus: TaskStatus) {
+  const tasks = JSON.parse(JSON.stringify($store.tasks)) as Record<string, Task>;
+  const updated: Record<string, Task> = {};
+  const now = new Date().toISOString().split("T")[0];
+
+  for (const [id, task] of Object.entries(tasks)) {
+    if (task.projectId === projectId) {
+      updated[id] = { ...task, status: newStatus, updatedAt: now };
+    } else {
+      updated[id] = task;
+    }
+  }
+
+  ($store as any).tasks = updated;
+}
+
+/**
+ * Clear all stress test tasks.
+ */
+export function clearStressTasks($store: AppStore) {
+  const tasks = JSON.parse(JSON.stringify($store.tasks)) as Record<string, Task>;
+  const filtered: Record<string, Task> = {};
+  for (const [id, task] of Object.entries(tasks)) {
+    if (!id.startsWith("stress-")) {
+      filtered[id] = task;
+    }
+  }
+  ($store as any).tasks = filtered;
 }

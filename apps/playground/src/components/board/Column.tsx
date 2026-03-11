@@ -2,6 +2,7 @@ import type { Task, TaskStatus } from "../../types";
 import { STATUSES } from "../../types";
 import { TaskCard } from "./TaskCard";
 import { EmptyState } from "../shared/EmptyState";
+import { RenderCounter } from "../shared/RenderCounter";
 
 interface ColumnProps {
   status: TaskStatus;
@@ -19,6 +20,7 @@ export function Column({ status, tasks, onTaskClick }: ColumnProps) {
           {label}
           <span className="column-count">{tasks.length}</span>
         </span>
+        <RenderCounter label={`${label} column`} />
       </div>
 
       <div className="column-cards">
