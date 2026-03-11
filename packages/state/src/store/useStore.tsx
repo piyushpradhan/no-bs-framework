@@ -62,6 +62,26 @@ export const setNestedValue = <T extends Record<string, any>>(
   };
 };
 
+export const deleteNestedValue = <T extends Record<string, any>>(
+  obj: T,
+  path: string[],
+): any => {
+  if (path.length === 0) return obj;
+
+  const [head, ...rest] = path;
+
+  if (rest.length === 0) {
+    // Remove the key at this level
+    const { [head]: _removed, ...remaining } = obj as any;
+    return remaining;
+  }
+
+  return {
+    ...obj,
+    [head]: deleteNestedValue(obj[head] ?? {}, rest),
+  };
+};
+
 export const createProxyHandler = <T extends Record<string, any>>(
   store: Store<T>,
   path: Array<string> = [],
@@ -94,6 +114,13 @@ export const createProxyHandler = <T extends Record<string, any>>(
         store.setState((state) => setNestedValue(state, fullPath, value));
       }
 
+      return true;
+    },
+    deleteProperty(target: any, prop: string): boolean {
+      if (!(prop in target)) return true;
+
+      const fullPath = [...path, prop];
+      store.setState((state) => deleteNestedValue(state, fullPath));
       return true;
     },
   };
