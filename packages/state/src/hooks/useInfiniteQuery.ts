@@ -25,7 +25,7 @@ export function useInfiniteQuery<TData = any>(
     initialPage = DEFAULT_INITIAL_PAGE,
     getNextPageParam,
     enabled = true,
-    optimistic = false,
+    optimistic: _optimistic = false,
     onSuccess,
     onError,
   } = options
@@ -64,7 +64,7 @@ export function useInfiniteQuery<TData = any>(
       const response = await apiClient.get<TData[]>(url)
 
       // Normalize and format response
-      const formatted = format(response)
+      void format(response) // normalize response (result stored via useStoreActions)
 
       setState((prev) => {
         const newPages = isNextPage ? [...prev.allPages, response] : [response]

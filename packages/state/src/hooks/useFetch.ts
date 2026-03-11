@@ -38,7 +38,7 @@ export function useFetch<TData = any>(
   })
 
   const { set, get, format } = useStoreActions<any>()
-  const abortControllerRef = useRef<AbortController>()
+  const abortControllerRef = useRef<AbortController | undefined>(undefined)
   const cacheKey = url ? `GET ${url}` : ""
 
   const fetchData = async () => {

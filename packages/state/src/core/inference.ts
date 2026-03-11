@@ -172,6 +172,13 @@ export function restructureDataByDomains(
   for (const [domainName, domainConfig] of Object.entries(domains)) {
     if (domainConfig.type === "collection") {
       restructured[domainName] = data[domainName];
+    } else if (
+      domainConfig.fields.length === 1 &&
+      domainConfig.fields[0] === domainName
+    ) {
+      // Single-field domain where the field name matches the domain name.
+      // Avoid double-nesting: { stats: { stats: { ... } } } → { stats: { ... } }
+      restructured[domainName] = data[domainName];
     } else {
       restructured[domainName] = {};
       for (const field of domainConfig.fields) {
