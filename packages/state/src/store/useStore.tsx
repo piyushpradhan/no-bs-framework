@@ -1,6 +1,7 @@
 import React, { useContext, useSyncExternalStore, useCallback } from "react";
 import { Store } from ".";
 import { formatState } from "..";
+import { normalizeArray } from "../core/normalization";
 
 export const StoreContext = React.createContext<Store<any> | null>(null);
 
@@ -134,7 +135,22 @@ export const createProxyHandler = <T extends Record<string, any>>(
       const currentValue = target[prop];
 
       if (currentValue !== value) {
-        store.setState((state) => setNestedValue(state, fullPath, value));
+        // Auto-normalize raw arrays of objects assigned to a top-level domain.
+        // Assigning $store.tasks = [...rawArray] would otherwise bypass the
+        // normalization that createStore applied on init, leaving a raw array
+        // where components expect a Record<id, entity>.
+        let processedValue = value;
+        if (
+          path.length === 0 &&
+          Array.isArray(value) &&
+          value.length > 0 &&
+          typeof value[0] === "object" &&
+          value[0] !== null &&
+          "id" in value[0]
+        ) {
+          processedValue = normalizeArray(value);
+        }
+        store.setState((state) => setNestedValue(state, fullPath, processedValue));
       }
 
       return true;
