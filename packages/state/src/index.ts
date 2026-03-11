@@ -8,6 +8,7 @@ export {
 } from "./core/inference";
 
 export { useStore, useBatch, StoreProvider } from "./store/useStore";
+export { useComputed } from "./store/useComputed";
 export { useStoreActions } from "./store/useStoreActions";
 
 // API Integration Exports
