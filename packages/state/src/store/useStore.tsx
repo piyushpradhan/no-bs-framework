@@ -52,14 +52,18 @@ export const setNestedValue = <T extends Record<string, any>>(
   }
 
   const [head, ...rest] = path;
+  const updatedChild =
+    rest.length === 0 ? value : setNestedValue((obj as any)[head] ?? {}, rest, value);
 
-  return {
-    ...obj,
-    [head]:
-      rest.length === 0
-        ? value
-        : setNestedValue(obj[head] ?? {}, rest, value),
-  };
+  // Preserve arrays: { ...array, key: val } converts an array to a plain object.
+  // Use array spread + index assignment instead.
+  if (Array.isArray(obj)) {
+    const copy = [...obj] as any[];
+    copy[head as any] = updatedChild;
+    return copy;
+  }
+
+  return { ...obj, [head]: updatedChild };
 };
 
 export const deleteNestedValue = <T extends Record<string, any>>(
@@ -82,6 +86,13 @@ export const deleteNestedValue = <T extends Record<string, any>>(
   };
 };
 
+// Array methods that mutate in-place. These are intercepted to fire a single
+// store update instead of triggering the set trap multiple times (once per
+// index and once for "length"), which would corrupt arrays into plain objects.
+const MUTATING_ARRAY_METHODS = new Set([
+  "push", "pop", "shift", "unshift", "splice", "sort", "reverse", "fill",
+]);
+
 export const createProxyHandler = <T extends Record<string, any>>(
   store: Store<T>,
   path: Array<string> = [],
@@ -95,6 +106,18 @@ export const createProxyHandler = <T extends Record<string, any>>(
         prop === "toJSON"
       ) {
         return target[prop];
+      }
+
+      // Intercept mutating array methods: run on a copy, then sync to store
+      // in one setState call instead of letting the method trigger multiple
+      // individual set traps (which would corrupt arrays into plain objects).
+      if (Array.isArray(target) && typeof prop === "string" && MUTATING_ARRAY_METHODS.has(prop)) {
+        return (...args: any[]) => {
+          const copy = [...target];
+          const result = (copy as any)[prop](...args);
+          store.setState((state) => setNestedValue(state, path, copy));
+          return result;
+        };
       }
 
       const value = target[prop];
