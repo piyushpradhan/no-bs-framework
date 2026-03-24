@@ -49,7 +49,6 @@ import {
 } from "./core/inference";
 import { normalizeArray } from "./core/normalization";
 import type { NormalizedStore } from "./core/storeTypes";
-export type { NormalizedStore } from "./core/storeTypes";
 
 /**
  * Bring the values into a optimal structure before putting
